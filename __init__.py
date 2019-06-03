@@ -45,7 +45,7 @@ class JenkinsSkill(Skill):
             password=self.config["sites"][deployment]["password"],
         )
         timeout = aiohttp.ClientTimeout(total=10)
-        api_url = f"{self.config['sites'][deployment]['url']}/job/{name}/crumbIssuer/api/json"
+        api_url = f"{self.config['sites'][deployment]['url']}/crumbIssuer/api/json"
         async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
             async with session.get(api_url) as resp:
                 crumb = await resp.json()
@@ -67,9 +67,9 @@ class JenkinsSkill(Skill):
         return data
 
     async def _build_job(self, deployment, name, folder=None):
-        crumb = job = await self._build_job(deployment, name, folder)
+        crumb = await self._get_crumb()(deployment)
         if not crumb:
-            retrn "Error Getting POST CRUMB"
+            return "Error Getting POST CRUMB"
         print(crumb)
         auth = aiohttp.BasicAuth(
             login=self.config["sites"][deployment]["username"],

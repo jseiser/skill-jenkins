@@ -54,5 +54,10 @@ class JenkinsSkill(Skill):
     async def get_jobs(self, message):
         deployment = message.regex.group("deployment")
         jobs = await self._get_jobs(deployment)
+        return_text = f"*{deployment} - Jobs*\n"
+        for job in jobs:
+            return_text = (
+                f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}```\n"
+            )
 
         await message.respond(f"{jobs}")

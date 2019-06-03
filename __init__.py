@@ -70,7 +70,6 @@ class JenkinsSkill(Skill):
         crumb = await self._get_crumb(deployment)
         if not crumb:
             return "Error Getting POST CRUMB"
-        print(crumb)
         auth = aiohttp.BasicAuth(
             login=self.config["sites"][deployment]["username"],
             password=self.config["sites"][deployment]["password"],

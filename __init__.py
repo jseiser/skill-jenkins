@@ -86,6 +86,15 @@ class JenkinsSkill(Skill):
             async with session.post(api_url) as resp:
                 return resp.status
 
+    async def _get_help(self):
+        return_text = f"*Help*\n"
+        return_text = f"{return_text}```jenkins help - Returns This Help Screen```\n"
+        return_text = f"{return_text}```jenkins list deployments - Returns Deployment keywords and urls```\n"
+        return_text = f"{return_text}```jenkins <deployment> list jobs - Returns Name, Url of All Jobs in Deployment```\n"
+        return_text = f"{return_text}```jenkins <deployment> get job name: <name> - Returns Name, URL and Health of Specific Job```\n"
+        return_text = f"{return_text}```jenkins <deployment> build job name: <name> (folder: <folder>) - Builds Jenkins Pipeline by name, folder options.  Folder is required for jobs in a folder. like /dev/job_name```\n"
+        return return_text
+
     # Matching Functions
 
     @match_regex(r"^jenkins list deployments$")
@@ -149,5 +158,11 @@ class JenkinsSkill(Skill):
         job = await self._build_job(deployment, name, folder)
         return_text = f"*{deployment} - {name}*\n"
         return_text = f"{return_text}```\tLaunch Status: {job}```"
+
+        await message.respond(f"{return_text}")
+
+    @match_regex(r"^jenkins help$")
+    async def list_help(self, message):
+        return_text = await self._get_help()
 
         await message.respond(f"{return_text}")

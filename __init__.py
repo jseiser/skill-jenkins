@@ -12,7 +12,7 @@ class JenkinsSkill(Skill):
             return_text = f"{return_text}```Deployment: {site} URL: {self.config['sites'][site]['url']}```\n"
         return return_text
 
-    async def _get_jobs(self, deployment):
+    async def _list_jobs(self, deployment):
         auth = aiohttp.BasicAuth(
             login=self.config["sites"][deployment]["username"],
             password=self.config["sites"][deployment]["password"],
@@ -25,13 +25,10 @@ class JenkinsSkill(Skill):
                 data = await resp.json()
                 jobs = []
                 for job in data["jobs"]:
-                    print(job)
                     if job["_class"] == "com.cloudbees.hudson.plugins.folder.Folder":
-                        print(job["url"])
                         async with session.get(f"{job['url']}/api/json") as resp:
                             folder_data = await resp.json()
                             for folder_job in folder_data["jobs"]:
-                                print(folder_job)
                                 jobs.append(
                                     {
                                         "name": folder_job["name"],
@@ -42,6 +39,23 @@ class JenkinsSkill(Skill):
                         jobs.append({"name": job["name"], "url": job["url"]})
             return jobs
 
+    async def _get_job(self, deployment, name, folder=None):
+        auth = aiohttp.BasicAuth(
+            login=self.config["sites"][deployment]["username"],
+            password=self.config["sites"][deployment]["password"],
+        )
+        timeout = aiohttp.ClientTimeout(total=60)
+        if folder:
+            api_url = f"{self.config['sites'][deployment]['url']}/job/{folder}/job/{name}/api/json"
+        else:
+            api_url = f"{self.config['sites'][deployment]['url']}/job/{name}/api/json"
+        print(api_url)
+        async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
+            async with session.get(api_url) as resp:
+                data = await resp.json()
+                print(data)
+        return data
+
     # Matching Functions
 
     @match_regex(r"^jenkins list deployments$")
@@ -50,14 +64,24 @@ class JenkinsSkill(Skill):
 
         await message.respond(f"{deployments}")
 
-    @match_regex(r"^jenkins (?P<deployment>\w+-\w+|\w+) list jobs$")
-    async def get_jobs(self, message):
+    @match_regex(r"^jenkins (?P<deployment>dev|prd) list jobs$")
+    async def list_jobs(self, message):
         deployment = message.regex.group("deployment")
-        jobs = await self._get_jobs(deployment)
+        jobs = await self._list_jobs(deployment)
         return_text = f"*{deployment} - Jobs*\n"
         for job in jobs:
             return_text = (
                 f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}```\n"
             )
+
+        await message.respond(f"{return_text}")
+
+    @match_regex(r"^jenkins (?P<deployment>dev|prd) get job name: (?P<name>.*)$")
+    async def get_job(self, message):
+        deployment = message.regex.group("deployment")
+        name = message.regex.group("name")
+        job = await self._get_job(deployment, name)
+        return_text = f"*{deployment} - {name}*\n"
+        return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
 
         await message.respond(f"{return_text}")

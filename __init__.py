@@ -87,7 +87,7 @@ class JenkinsSkill(Skill):
         await message.respond(f"{return_text}")
 
     @match_regex(
-        r"^jenkins (?P<deployment>dev|prd) get job name: (?P<name>.*) folder:(?P<folder>)$"
+        r"^jenkins (?P<deployment>dev|prd) get job name: (?P<name>.*) folder: (?P<folder>.*)$"
     )
     async def get_job_folder(self, message):
         deployment = message.regex.group("deployment")

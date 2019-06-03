@@ -64,9 +64,12 @@ class JenkinsSkill(Skill):
             api_url = f"{self.config['sites'][deployment]['url']}/job/{folder}/job/{name}/build"
         else:
             api_url = f"{self.config['sites'][deployment]['url']}/job/{name}/build"
+        print(api_url)
         async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
             async with session.post(api_url) as resp:
+                print(resp.status)
                 data = await resp.json()
+                print(data)
         return data
 
     # Matching Functions
@@ -130,7 +133,7 @@ class JenkinsSkill(Skill):
         name = message.regex.group("name")
         folder = message.regex.group("folder")
         job = await self._build_job(deployment, name, folder)
-        return_text = f"*{deployment} - {name}*\n"
-        return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
+        # return_text = f"*{deployment} - {name}*\n"
+        # return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
 
-        await message.respond(f"{return_text}")
+        await message.respond(f"{job}")

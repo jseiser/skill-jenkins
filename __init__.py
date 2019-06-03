@@ -49,11 +49,24 @@ class JenkinsSkill(Skill):
             api_url = f"{self.config['sites'][deployment]['url']}/job/{folder}/job/{name}/api/json"
         else:
             api_url = f"{self.config['sites'][deployment]['url']}/job/{name}/api/json"
-        print(api_url)
         async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
             async with session.get(api_url) as resp:
                 data = await resp.json()
-                print(data)
+        return data
+
+    async def _build_job(self, deployment, name, folder=None):
+        auth = aiohttp.BasicAuth(
+            login=self.config["sites"][deployment]["username"],
+            password=self.config["sites"][deployment]["password"],
+        )
+        timeout = aiohttp.ClientTimeout(total=10)
+        if folder:
+            api_url = f"{self.config['sites'][deployment]['url']}/job/{folder}/job/{name}/build"
+        else:
+            api_url = f"{self.config['sites'][deployment]['url']}/job/{name}/build"
+        async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
+            async with session.post(api_url) as resp:
+                data = await resp.json()
         return data
 
     # Matching Functions
@@ -94,6 +107,29 @@ class JenkinsSkill(Skill):
         name = message.regex.group("name")
         folder = message.regex.group("folder")
         job = await self._get_job(deployment, name, folder)
+        return_text = f"*{deployment} - {name}*\n"
+        return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
+
+        await message.respond(f"{return_text}")
+
+    @match_regex(r"^jenkins (?P<deployment>dev|prd) build job name: (?P<name>.*)$")
+    async def build_job(self, message):
+        deployment = message.regex.group("deployment")
+        name = message.regex.group("name")
+        job = await self._build_job(deployment, name)
+        # return_text = f"*{deployment} - {name}*\n"
+        # return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
+
+        await message.respond(f"{job}")
+
+    @match_regex(
+        r"^jenkins (?P<deployment>dev|prd) build job name: (?P<name>.*) folder: (?P<folder>dev|stage)$"
+    )
+    async def build_job_folder(self, message):
+        deployment = message.regex.group("deployment")
+        name = message.regex.group("name")
+        folder = message.regex.group("folder")
+        job = await self._build_job(deployment, name, folder)
         return_text = f"*{deployment} - {name}*\n"
         return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
 

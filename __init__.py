@@ -85,3 +85,16 @@ class JenkinsSkill(Skill):
         return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
 
         await message.respond(f"{return_text}")
+
+    @match_regex(
+        r"^jenkins (?P<deployment>dev|prd) get job name: (?P<name>.*) folder:(?P<folder>)$"
+    )
+    async def get_job_folder(self, message):
+        deployment = message.regex.group("deployment")
+        name = message.regex.group("name")
+        folder = message.regex.group("folder")
+        job = await self._get_job(deployment, name, folder)
+        return_text = f"*{deployment} - {name}*\n"
+        return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
+
+        await message.respond(f"{return_text}")

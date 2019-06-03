@@ -17,7 +17,7 @@ class JenkinsSkill(Skill):
             login=self.config["sites"][deployment]["username"],
             password=self.config["sites"][deployment]["password"],
         )
-        timeout = aiohttp.ClientTimeout(total=60)
+        timeout = aiohttp.ClientTimeout(total=10)
         api_url = f"{self.config['sites'][deployment]['url']}/api/json"
 
         async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
@@ -44,7 +44,7 @@ class JenkinsSkill(Skill):
             login=self.config["sites"][deployment]["username"],
             password=self.config["sites"][deployment]["password"],
         )
-        timeout = aiohttp.ClientTimeout(total=60)
+        timeout = aiohttp.ClientTimeout(total=10)
         if folder:
             api_url = f"{self.config['sites'][deployment]['url']}/job/{folder}/job/{name}/api/json"
         else:
@@ -87,7 +87,7 @@ class JenkinsSkill(Skill):
         await message.respond(f"{return_text}")
 
     @match_regex(
-        r"^jenkins (?P<deployment>dev|prd) get job name: (?P<name>.*) folder: (?P<folder>.*)$"
+        r"^jenkins (?P<deployment>dev|prd) get job name: (?P<name>.*) folder: (?P<folder>dev|stage)$"
     )
     async def get_job_folder(self, message):
         deployment = message.regex.group("deployment")

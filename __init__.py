@@ -138,7 +138,7 @@ class JenkinsSkill(Skill):
         return_text = f"*{deployment} - {name}*\n"
         return_text = f"{return_text}```\tLaunch Status: {job}```"
 
-        await message.respond(f"{job}")
+        await message.respond(f"{return_text}")
 
     @match_regex(
         r"^jenkins (?P<deployment>dev|prd) build job name: (?P<name>.*) folder: (?P<folder>dev|stage)$"
@@ -151,4 +151,4 @@ class JenkinsSkill(Skill):
         return_text = f"*{deployment} - {name}*\n"
         return_text = f"{return_text}```\tLaunch Status: {job}```"
 
-        await message.respond(f"{job}")
+        await message.respond(f"{return_text}")

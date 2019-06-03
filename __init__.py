@@ -80,8 +80,10 @@ class JenkinsSkill(Skill):
             api_url = f"{self.config['sites'][deployment]['url']}/job/{folder}/job/{name}/build"
         else:
             api_url = f"{self.config['sites'][deployment]['url']}/job/{name}/build"
-        print(api_url)
-        async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
+        headers = {crumb["crumbRequestField"]: crumb["crumb"]}
+        async with aiohttp.ClientSession(
+            auth=auth, timeout=timeout, headers=headers
+        ) as session:
             async with session.post(api_url) as resp:
                 print(resp.status)
                 data = await resp.json()

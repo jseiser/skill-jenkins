@@ -28,7 +28,7 @@ class JenkinsSkill(Skill):
                     print(job)
                     if job["_class"] == "com.cloudbees.hudson.plugins.folder.Folder":
                         print(job["url"])
-                        async with session.get(job["url"]) as resp:
+                        async with session.get(f"{job['url']}/api/json") as resp:
                             folder_data = await resp.json()
                             for folder_job in folder_data["jobs"]:
                                 print(folder_job)

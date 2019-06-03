@@ -85,10 +85,7 @@ class JenkinsSkill(Skill):
             auth=auth, timeout=timeout, headers=headers
         ) as session:
             async with session.post(api_url) as resp:
-                print(resp.status)
-                data = await resp.json()
-                print(data)
-        return data
+                return resp.status
 
     # Matching Functions
 
@@ -138,8 +135,8 @@ class JenkinsSkill(Skill):
         deployment = message.regex.group("deployment")
         name = message.regex.group("name")
         job = await self._build_job(deployment, name)
-        # return_text = f"*{deployment} - {name}*\n"
-        # return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
+        return_text = f"*{deployment} - {name}*\n"
+        return_text = f"{return_text}```\tLaunch Status: {job}```"
 
         await message.respond(f"{job}")
 
@@ -151,7 +148,7 @@ class JenkinsSkill(Skill):
         name = message.regex.group("name")
         folder = message.regex.group("folder")
         job = await self._build_job(deployment, name, folder)
-        # return_text = f"*{deployment} - {name}*\n"
-        # return_text = f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}\n\tHealth: {job['healthReport'][0]['description']}```\n"
+        return_text = f"*{deployment} - {name}*\n"
+        return_text = f"{return_text}```\tLaunch Status: {job}```"
 
         await message.respond(f"{job}")

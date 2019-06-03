@@ -23,7 +23,7 @@ class JenkinsSkill(Skill):
         async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
             async with session.get(api_url) as resp:
                 data = await resp.json()
-                jobs = {}
+                jobs = []
                 for job in data["jobs"]:
                     print(job)
                     if job["_class"] == "com.cloudbees.hudson.plugins.folder.Folder":
@@ -32,14 +32,14 @@ class JenkinsSkill(Skill):
                             folder_data = await resp.json()
                             for folder_job in folder_data["jobs"]:
                                 print(folder_job)
-                                jobs.update(
+                                jobs.append(
                                     {
                                         "name": folder_job["name"],
                                         "url": folder_job["url"],
                                     }
                                 )
                     else:
-                        jobs.update({"name": job["name"], "url": job["url"]})
+                        jobs.append({"name": job["name"], "url": job["url"]})
             return jobs
 
     # Matching Functions

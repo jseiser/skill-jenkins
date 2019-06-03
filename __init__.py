@@ -67,7 +67,7 @@ class JenkinsSkill(Skill):
         return data
 
     async def _build_job(self, deployment, name, folder=None):
-        crumb = await self._get_crumb()(deployment)
+        crumb = await self._get_crumb(deployment)
         if not crumb:
             return "Error Getting POST CRUMB"
         print(crumb)

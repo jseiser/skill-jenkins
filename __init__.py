@@ -60,4 +60,4 @@ class JenkinsSkill(Skill):
                 f"{return_text}```\tName: {job['name']}\n\tURL: {job['url']}```\n"
             )
 
-        await message.respond(f"{jobs}")
+        await message.respond(f"{return_text}")

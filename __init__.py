@@ -5,6 +5,22 @@ import aiohttp
 
 
 class JenkinsSkill(Skill):
+    async def _rest_call(self, deployment, api_url, call_method):
+        auth = aiohttp.BasicAuth(
+            login=self.config["sites"][deployment]["username"],
+            password=self.config["sites"][deployment]["password"],
+        )
+        timeout = aiohttp.ClientTimeout(total=60)
+        async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
+            if call_method == "get":
+                async with session.get(api_url) as resp:
+                    data = await resp.json()
+                    return data
+            else:
+                async with session.post(api_url) as resp:
+                    data = await resp.json()
+                    return data
+
     async def _get_deployments(self):
         sites = self.config["sites"]
         return_text = f"*Jenkins Deployments*\n"
@@ -13,72 +29,47 @@ class JenkinsSkill(Skill):
         return return_text
 
     async def _list_jobs(self, deployment):
-        auth = aiohttp.BasicAuth(
-            login=self.config["sites"][deployment]["username"],
-            password=self.config["sites"][deployment]["password"],
-        )
-        timeout = aiohttp.ClientTimeout(total=10)
         api_url = f"{self.config['sites'][deployment]['url']}/api/json"
 
-        async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
-            async with session.get(api_url) as resp:
-                data = await resp.json()
-                jobs = []
-                for job in data["jobs"]:
-                    if job["_class"] == "com.cloudbees.hudson.plugins.folder.Folder":
-                        async with session.get(f"{job['url']}/api/json") as resp:
-                            folder_data = await resp.json()
-                            for folder_job in folder_data["jobs"]:
-                                jobs.append(
-                                    {
-                                        "name": folder_job["name"],
-                                        "url": folder_job["url"],
-                                    }
-                                )
-                    else:
-                        jobs.append({"name": job["name"], "url": job["url"]})
-            return jobs
+        data = await self._rest_call(deployment, api_url, "get")
+        jobs = []
+        for job in data["jobs"]:
+            if job["_class"] == "com.cloudbees.hudson.plugins.folder.Folder":
+                api_url = f"{job['url']}/api/json"
+                folder_data = await self._rest_call(deployment, api_url, "get")
+                for folder_job in folder_data["jobs"]:
+                    jobs.append({"name": folder_job["name"], "url": folder_job["url"]})
+            else:
+                jobs.append({"name": job["name"], "url": job["url"]})
+        return jobs
 
     async def _get_crumb(self, deployment):
-        auth = aiohttp.BasicAuth(
-            login=self.config["sites"][deployment]["username"],
-            password=self.config["sites"][deployment]["password"],
-        )
-        timeout = aiohttp.ClientTimeout(total=10)
         api_url = f"{self.config['sites'][deployment]['url']}/crumbIssuer/api/json"
-        async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
-            async with session.get(api_url) as resp:
-                crumb = await resp.json()
+        crumb = await self._rest_call(deployment, api_url, "get")
         return crumb
 
     async def _get_job(self, deployment, name, folder=None):
-        auth = aiohttp.BasicAuth(
-            login=self.config["sites"][deployment]["username"],
-            password=self.config["sites"][deployment]["password"],
-        )
-        timeout = aiohttp.ClientTimeout(total=10)
         if folder:
             api_url = f"{self.config['sites'][deployment]['url']}/job/{folder}/job/{name}/api/json"
         else:
             api_url = f"{self.config['sites'][deployment]['url']}/job/{name}/api/json"
-        async with aiohttp.ClientSession(auth=auth, timeout=timeout) as session:
-            async with session.get(api_url) as resp:
-                data = await resp.json()
+        data = await self._rest_call(deployment, api_url, "get")
         return data
 
     async def _build_job(self, deployment, name, folder=None):
         crumb = await self._get_crumb(deployment)
         if not crumb:
             return "Error Getting POST CRUMB"
+
+        if folder:
+            api_url = f"{self.config['sites'][deployment]['url']}/job/{folder}/job/{name}/build"
+        else:
+            api_url = f"{self.config['sites'][deployment]['url']}/job/{name}/build"
         auth = aiohttp.BasicAuth(
             login=self.config["sites"][deployment]["username"],
             password=self.config["sites"][deployment]["password"],
         )
         timeout = aiohttp.ClientTimeout(total=10)
-        if folder:
-            api_url = f"{self.config['sites'][deployment]['url']}/job/{folder}/job/{name}/build"
-        else:
-            api_url = f"{self.config['sites'][deployment]['url']}/job/{name}/build"
         headers = {crumb["crumbRequestField"]: crumb["crumb"]}
         async with aiohttp.ClientSession(
             auth=auth, timeout=timeout, headers=headers
